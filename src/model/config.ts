@@ -8,7 +8,6 @@ export interface Attribute {
     counter: boolean
     digits: number
     unique: boolean
-    entitlement: boolean
 }
 
 export interface Config {

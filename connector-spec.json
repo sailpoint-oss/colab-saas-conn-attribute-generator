@@ -11,7 +11,7 @@
         "case": "same",
         "expression": "#set($initial = $firstname.substring(0, 1))$initial$lastname",
         "unique": false,
-        "refresh": false,
+        "refresh": true,
         "spConnEnableStatefulCommands": true
     },
     "sourceConfig": [
@@ -98,7 +98,7 @@
                                         },
                                         {
                                             "key": "refresh",
-                                            "label": "Refresh on aggregation?",
+                                            "label": "Refresh on each aggregation?",
                                             "type": "checkbox",
                                             "parentKey": "unique",
                                             "parentValue": "false"
@@ -149,11 +149,6 @@
                                             "required": true,
                                             "parentKey": "counter",
                                             "parentValue": "true"
-                                        },
-                                        {
-                                            "key": "entitlement",
-                                            "label": "Assigned by entitlement?",
-                                            "type": "checkbox"
                                         }
                                     ]
                                 }

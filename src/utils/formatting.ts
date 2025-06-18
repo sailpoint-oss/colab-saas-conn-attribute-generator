@@ -1,6 +1,7 @@
 import { transliterate } from 'transliteration'
 import velocityjs from 'velocityjs'
 import { RenderContext } from 'velocityjs/dist/src/type'
+import { logger } from '@sailpoint/connector-sdk'
 
 export const normalize = (str: string): string => {
     let result = transliterate(str)
@@ -30,16 +31,20 @@ export const switchCase = (str: string, caseType: 'lower' | 'upper' | 'capitaliz
 }
 
 export const evaluateVelocityTemplate = (expression: string, context: RenderContext): string | undefined => {
+    logger.debug(`Evaluating velocity template - expression: ${expression}, context: ${JSON.stringify(context)}`)
     const template = velocityjs.parse(expression)
     const velocity = new velocityjs.Compile(template)
     const result = velocity.render(context)
-
+    logger.debug(`Velocity template evaluation result: ${result}`)
     return result
 }
 
 export const templateHasVariable = (expression: string, variable: string): boolean => {
+    logger.debug(`Checking if template contains variable: ${variable} in expression: ${expression}`)
     const template = velocityjs.parse(expression)
-    return template.find((x) => (x as any).id === variable) ? true : false
+    const hasVariable = template.find((x) => (x as any).id === variable) ? true : false
+    logger.debug(`Template variable check result - variable: ${variable}, found: ${hasVariable}`)
+    return hasVariable
 }
 
 export const padNumber = (number: number, length: number): string => {

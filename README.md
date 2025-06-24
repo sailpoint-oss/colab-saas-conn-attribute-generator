@@ -14,6 +14,14 @@ The Attribute Generator connector allows you to:
 -   Support incremental aggregation with stateful operations
 -   Reference previously generated attributes in subsequent attribute definitions
 
+## Disclaimer
+
+**Important Operational Notes:**
+
+-   **No Provisioning Support**: This connector does not support provisioning operations. It is designed solely for attribute generation and aggregation.
+-   **Aggregation-Based Generation**: Attributes are generated on each account aggregation cycle to ensure consistency and avoid race conditions, particularly when generating unique and counter-based attributes.
+-   **Stateful Operations**: The connector maintains state between aggregation cycles to ensure proper sequencing of counter-based attributes and unique value generation.
+
 ## Prerequisites
 
 -   Node.js (v14 or higher)

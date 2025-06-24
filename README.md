@@ -68,6 +68,12 @@ The connector requires the following configuration:
     -   **Refresh on Each Aggregation**: Regenerate attribute on each connector run
 -   **Support for Incremental Counters**: Enable stateful operations for persistent counters
 
+![Attribute Generation Configuration](assets/Attribute%20Generation%20Configuration.jpg)
+
+![Attribute Definition](assets/Attribute%20Definition.jpg)
+
+> **Important**: After adding or modifying attribute definitions, you must re-discover the account schema to update it with the latest changes. This ensures that newly defined attributes are properly recognized by the connector.
+
 ## Features
 
 ### Velocity Expression Support

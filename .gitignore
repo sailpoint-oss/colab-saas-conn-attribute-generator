@@ -1,0 +1,33 @@
+# macOS General
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Visual Studio Code
+.vscode/
+.history/
+
+# Intellij
+.idea/
+*.iml
+
+# Dependency directories
+node_modules/
+
+# Compiled source
+dist/
+coverage/
+
+*.local.http
+input.json
+config.json
+
+test/
+reports/
+exportedObjects/
+# Sentry Config File
+.sentryclirc
+.httpyac.json
+
+.env
+package-lock.json

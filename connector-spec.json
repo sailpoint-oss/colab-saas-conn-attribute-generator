@@ -1,0 +1,195 @@
+{
+    "name": "Attribute Generator",
+    "description": "Attribute Generator is a connector that generates attributes based on a given expression.",
+    "commands": ["std:test-connection", "std:account:list", "std:account:read", "std:account:discover-schema"],
+    "supportsCustomSchemas": true,
+    "supportsStatefulCommands": true,
+    "showDebugLoggingOption": true,
+    "sourceConfigInitialValues": {
+        "search": "*",
+        "digits": 1,
+        "case": "same",
+        "expression": "#set($initial = $firstname.substring(0, 1))$initial$lastname",
+        "unique": false,
+        "refresh": false,
+        "force": false,
+        "type": "normal",
+        "spConnEnableStatefulCommands": true
+    },
+    "sourceConfig": [
+        {
+            "type": "menu",
+            "label": "Connection Details",
+            "items": [
+                {
+                    "type": "section",
+                    "sectionTitle": "Identity Security Cloud connection configuration",
+                    "sectionHelpMessage": "Configuration details for Identity Security Cloud Tenant",
+                    "items": [
+                        {
+                            "key": "baseurl",
+                            "label": "Identity Security Cloud API URL",
+                            "type": "url",
+                            "required": true
+                        },
+                        {
+                            "key": "clientId",
+                            "label": "Personal Access Token ID",
+                            "type": "text",
+                            "required": true
+                        },
+                        {
+                            "key": "clientSecret",
+                            "label": "Personal Access Token secret",
+                            "type": "secret",
+                            "required": true
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "menu",
+            "label": "Attributes",
+            "items": [
+                {
+                    "type": "section",
+                    "sectionTitle": "Attribute Generation Configuration",
+                    "sectionHelpMessage": "Add your attribute generation definitions here",
+                    "items": [
+                        {
+                            "key": "search",
+                            "label": "Identity Search Query",
+                            "type": "text",
+                            "required": true
+                        },
+                        {
+                            "key": "attributes",
+                            "label": "Attribute Generation Definitions",
+                            "titleKey": "query",
+                            "subtitleKey": "name",
+                            "dragNDropEnabled": true,
+                            "deleteButton": true,
+                            "editButton": true,
+                            "addButton": true,
+                            "copyButton": true,
+                            "buttonLabel": "New Account Attribute Definition",
+                            "type": "cardList",
+                            "helpKey": "Add definitions to build your attributes",
+                            "subMenus": [
+                                {
+                                    "label": "Attribute Configuration",
+                                    "items": [
+                                        {
+                                            "key": "name",
+                                            "label": "Attribute Name",
+                                            "type": "text",
+                                            "required": true
+                                        },
+                                        {
+                                            "key": "expression",
+                                            "label": "Apache Velocity expression",
+                                            "type": "textarea",
+                                            "required": true
+                                        },
+                                        {
+                                            "key": "case",
+                                            "label": "Case selection",
+                                            "type": "select",
+                                            "required": true,
+                                            "options": [
+                                                {
+                                                    "label": "Do not change",
+                                                    "value": "same"
+                                                },
+                                                {
+                                                    "label": "Lower case",
+                                                    "value": "lower"
+                                                },
+                                                {
+                                                    "label": "Upper case",
+                                                    "value": "upper"
+                                                },
+                                                {
+                                                    "label": "Capitalize",
+                                                    "value": "capitalize"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "key": "type",
+                                            "label": "Attribute Type",
+                                            "type": "select",
+                                            "required": true,
+                                            "options": [
+                                                {
+                                                    "label": "Normal",
+                                                    "value": "normal"
+                                                },
+                                                {
+                                                    "label": "Unique",
+                                                    "value": "unique"
+                                                },
+                                                {
+                                                    "label": "Counter-based",
+                                                    "value": "counter"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "key": "digits",
+                                            "label": "Minimum counter digits ($counter)",
+                                            "type": "number",
+                                            "required": true,
+                                            "parentKey": "type",
+                                            "parentValue": "counter"
+                                        },
+                                        {
+                                            "key": "normalize",
+                                            "label": "Normalize special characters?",
+                                            "type": "toggle"
+                                        },
+                                        {
+                                            "key": "spaces",
+                                            "label": "Remove spaces?",
+                                            "type": "toggle"
+                                        },
+                                        {
+                                            "key": "refresh",
+                                            "label": "Refresh on each aggregation?",
+                                            "type": "toggle"
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "key": "spConnEnableStatefulCommands",
+                            "label": "Support for incremental counters",
+                            "required": true,
+                            "type": "toggle"
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "accountSchema": {
+        "identityAttribute": "id",
+        "displayAttribute": "name",
+        "groupAttribute": "groups",
+        "attributes": [
+            {
+                "name": "id",
+                "type": "string",
+                "description": "Account ID"
+            },
+            {
+                "name": "name",
+                "type": "string",
+                "description": "Account name"
+            }
+        ]
+    },
+    "entitlementSchemas": []
+}

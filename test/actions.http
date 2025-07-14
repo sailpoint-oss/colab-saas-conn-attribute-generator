@@ -1,0 +1,140 @@
+@url = http://localhost:3000
+###
+# Test connection
+POST {{url}}
+Content-Type: application/json
+
+{
+  "type": "std:test-connection",
+  "input": {},
+  "config": {{config}}
+}
+###
+# Discover schema
+POST {{url}}
+Content-Type: application/json
+
+{
+  "type": "std:account:discover-schema",
+  "input": {},
+  "config": {{config}}
+}
+
+HTTP/1.1 200  - OK
+x-powered-by: Express
+content-type: application/x-ndjson
+date: Thu, 07 Nov 2024 11:08:54 GMT
+connection: close
+transfer-encoding: chunked
+###
+# Account list
+POST {{url}}
+Content-Type: application/json
+
+{
+  "type": "std:account:list",
+  "input": {},
+  "config": {{config}}
+}
+###
+# Account read
+POST {{url}}
+Content-Type: application/json
+
+{
+  "type": "std:account:read",
+  "input": {
+    "identity": "6a3bf623-558a-40b7-8453-4d67a3611239"
+  },
+  "config": {{config}}
+}
+
+HTTP/1.1 200  - OK
+x-powered-by: Express
+content-type: application/x-ndjson
+date: Mon, 17 Feb 2025 16:36:57 GMT
+connection: close
+transfer-encoding: chunked
+###
+# Entitlement list
+POST {{url}}
+Content-Type: application/json
+
+{
+  "type": "std:entitlement:list",
+  "input": {
+        "type": "group"
+    },
+  "config": {{config}}
+}
+###
+# Entitlement read
+POST {{url}}
+Content-Type: application/json
+
+{
+  "type": "std:entitlement:read",
+  "input": {
+        "identity": "fc16aee3-0359-4d46-b746-b36459211660"
+    },
+  "config": {{config}}
+}
+###
+# Account disable
+POST {{url}}
+Content-Type: application/json
+
+{
+  "type": "std:account:disable",
+  "input": {
+    "identity": "993",
+    "key": { "simple": { "id": "993" } }
+  },
+"config": {{config}}
+}
+###
+# Account enable
+POST {{url}}
+Content-Type: application/json
+
+{
+  "type": "std:account:enable",
+  "input": {
+    "identity": "6a3bf623-558a-40b7-8453-4d67a3611239"
+  },
+  "config": {{config}}
+}
+###
+# Account update
+POST {{url}}
+Content-Type: application/json
+
+{
+  "type": "std:account:update",
+  "input": {"changes":[{"attribute":"actions","op":"Add","value":"report"}], "identity":"7c84d26c-ad84-4b2e-9860-359e5e9c6c9d"},
+  "config": {{config}}
+}
+
+HTTP/1.1 200  - OK
+x-powered-by: Express
+content-type: application/x-ndjson
+date: Wed, 07 May 2025 08:27:07 GMT
+connection: close
+transfer-encoding: chunked
+###
+# Account create
+POST {{url}}
+Content-Type: application/json
+
+{
+  "type": "std:account:create",
+  "input": {"attributes":{"name":"Aaron.Nichols","firstname":"Aaron","groups":"account","lastname":"Nichols"}},
+  "config": {{config}}
+}
+
+HTTP/1.1 200  - OK
+x-powered-by: Express
+content-type: application/x-ndjson
+date: Tue, 17 Jun 2025 12:15:21 GMT
+connection: close
+transfer-encoding: chunked

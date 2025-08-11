@@ -8,7 +8,8 @@ import {
     switchCase,
     templateHasVariable,
 } from './formatting'
-import { logger } from '@sailpoint/connector-sdk'
+import { ConnectorError, logger } from '@sailpoint/connector-sdk'
+import { IdentityDocument } from 'sailpoint-api-client'
 
 export class StateWrapper {
     state: Map<string, number> = new Map()
@@ -122,4 +123,35 @@ export const buildAttribute = (
     }
 
     return value
+}
+
+export const processAttribute = (
+    definition: Attribute,
+    identity: IdentityDocument,
+    accountAttributes: { [key: string]: any },
+    counter?: () => number,
+    values?: any[]
+) => {
+    if (definition.type === 'counter' && !counter) {
+        logger.info(`Skipping refresh for attribute ${definition.name} because it is of ${definition.type} type`)
+        return
+    }
+
+    if (definition.type === 'unique' && !values) {
+        logger.info(`Skipping refresh for attribute ${definition.name} because it is of ${definition.type} type`)
+        return
+    }
+
+    let refresh = definition.refresh
+    if (refresh || accountAttributes[definition.name] === undefined) {
+        logger.debug(`Building attribute ${definition.name} for identity ${identity.id}`)
+        if (identity.attributes) {
+            const value = buildAttribute(definition, identity.attributes, StateWrapper.getCounter())
+            accountAttributes![definition.name] = value
+            identity.attributes[definition.name] = value
+        } else {
+            logger.error(`Identity ${identity.id} has no attributes`)
+            throw new ConnectorError(`Identity ${identity.id} has no attributes`)
+        }
+    }
 }

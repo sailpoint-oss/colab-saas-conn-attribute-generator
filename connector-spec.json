@@ -1,7 +1,14 @@
 {
     "name": "Attribute Generator",
     "description": "Attribute Generator is a connector that generates attributes based on a given expression.",
-    "commands": ["std:test-connection", "std:account:list", "std:account:read", "std:account:discover-schema"],
+    "commands": [
+        "std:test-connection",
+        "std:account:list",
+        "std:account:read",
+        "std:account:create",
+        "std:account:update",
+        "std:account:discover-schema"
+    ],
     "supportsCustomSchemas": true,
     "supportsStatefulCommands": true,
     "showDebugLoggingOption": true,
@@ -191,5 +198,21 @@
             }
         ]
     },
-    "entitlementSchemas": []
+    "entitlementSchemas": [],
+    "accountCreateTemplate": {
+        "fields": [
+            {
+                "key": "name",
+                "label": "Name",
+                "type": "string",
+                "required": true,
+                "initialValue": {
+                    "type": "identityAttribute",
+                    "attributes": {
+                        "name": "name"
+                    }
+                }
+            }
+        ]
+    }
 }

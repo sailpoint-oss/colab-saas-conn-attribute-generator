@@ -102,13 +102,13 @@ export const buildAttribute = (
     }
 
     if (definition.type === 'unique') {
-        logger.debug(`Processing unique attribute: ${definition.name}`)
         attributes.counter = ''
     }
 
     let value = processAttributeDefinition(definition, attributes, counter, values)
 
     if (definition.type === 'unique') {
+        logger.debug(`Processing unique attribute: ${definition.name}`)
         if (!templateHasVariable(definition.expression, 'counter')) {
             logger.debug(`Adding counter variable to expression for unique attribute: ${definition.name}`)
             definition.expression = definition.expression + '$counter'
@@ -129,7 +129,7 @@ export const processAttribute = (
     definition: Attribute,
     identity: IdentityDocument,
     accountAttributes: { [key: string]: any },
-    counter?: () => number,
+    counter: () => number,
     values?: any[]
 ) => {
     if (definition.type === 'counter' && !counter) {
@@ -146,7 +146,7 @@ export const processAttribute = (
     if (refresh || accountAttributes[definition.name] === undefined) {
         logger.debug(`Building attribute ${definition.name} for identity ${identity.id}`)
         if (identity.attributes) {
-            const value = buildAttribute(definition, identity.attributes, StateWrapper.getCounter())
+            const value = buildAttribute(definition, identity.attributes, counter)
             accountAttributes![definition.name] = value
             identity.attributes[definition.name] = value
         } else {

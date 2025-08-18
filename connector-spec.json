@@ -7,9 +7,10 @@
         "std:account:read",
         "std:account:create",
         "std:account:update",
+        "std:entitlement:list",
         "std:account:discover-schema"
     ],
-    "supportsCustomSchemas": true,
+    "supportsCustomSchemas": false,
     "supportsStatefulCommands": true,
     "showDebugLoggingOption": true,
     "sourceConfigInitialValues": {
@@ -65,10 +66,18 @@
                     "sectionHelpMessage": "Add your attribute generation definitions here",
                     "items": [
                         {
+                            "key": "useSearch",
+                            "label": "Use search for aggregation?",
+                            "type": "toggle",
+                            "required": false
+                        },
+                        {
                             "key": "search",
                             "label": "Identity Search Query",
                             "type": "text",
-                            "required": true
+                            "required": true,
+                            "parentKey": "useSearch",
+                            "parentValue": "true"
                         },
                         {
                             "key": "attributes",
@@ -184,7 +193,7 @@
     "accountSchema": {
         "identityAttribute": "id",
         "displayAttribute": "name",
-        "groupAttribute": "groups",
+        "groupAttribute": "actions",
         "attributes": [
             {
                 "name": "id",
@@ -195,10 +204,42 @@
                 "name": "name",
                 "type": "string",
                 "description": "Account name"
+            },
+            {
+                "name": "actions",
+                "type": "string",
+                "description": "Actions",
+                "entitlement": true,
+                "managed": true,
+                "multiple": false,
+                "schemaObjectType": "action"
             }
         ]
     },
-    "entitlementSchemas": [],
+    "entitlementSchemas": [
+        {
+            "type": "action",
+            "identityAttribute": "id",
+            "displayAttribute": "name",
+            "attributes": [
+                {
+                    "name": "id",
+                    "type": "string",
+                    "description": "ID"
+                },
+                {
+                    "name": "name",
+                    "type": "string",
+                    "description": "Name"
+                },
+                {
+                    "name": "description",
+                    "type": "string",
+                    "description": "Description"
+                }
+            ]
+        }
+    ],
     "accountCreateTemplate": {
         "fields": [
             {
@@ -207,9 +248,9 @@
                 "type": "string",
                 "required": true,
                 "initialValue": {
-                    "type": "identityAttribute",
+                    "type": "static",
                     "attributes": {
-                        "name": "name"
+                        "value": "$identity.getName()"
                     }
                 }
             }

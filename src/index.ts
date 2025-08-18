@@ -10,6 +10,9 @@ import {
     StdAccountReadHandler,
     StdAccountCreateHandler,
     StdAccountUpdateHandler,
+    StdEntitlementListHandler,
+    StdEntitlementListOutput,
+    AttributeChangeOp,
 } from '@sailpoint/connector-sdk'
 import { ISCClient } from './isc-client'
 import { Config } from './model/config'
@@ -50,18 +53,20 @@ export const connector = async () => {
 
     const processIdentity = async (
         identity: IdentityDocument,
-        counter?: () => number,
-        values?: any[]
+        stateWrapper?: StateWrapper,
+        valuesMap?: Map<string, string[]>
     ): Promise<Account> => {
         const attributes = config.attributes ?? []
         let accountAttributes = getSourceAccountFromIdentity(identity)
 
-        // if (!counter) {
-        //     counter = StateWrapper.getCounter()
-        // }
-
         for (const definition of attributes) {
-            processAttribute(definition, identity, accountAttributes, counter, values)
+            processAttribute(
+                definition,
+                identity,
+                accountAttributes,
+                stateWrapper?.getCounter(definition.name) ?? StateWrapper.getCounter(),
+                valuesMap?.get(definition.name)
+            )
         }
 
         const account = new Account(accountAttributes)
@@ -84,7 +89,7 @@ export const connector = async () => {
     const stdAccountDiscoverSchema: StdAccountDiscoverSchemaHandler = async (context, input, res) => {
         logger.debug('Discovering account schema')
         const schema: AccountSchema = spec.accountSchema
-        config = await context.reloadConfig()
+        config = await readConfig()
         const attributes = config.attributes ?? []
 
         for (const attribute of attributes) {
@@ -102,7 +107,7 @@ export const connector = async () => {
 
     const stdAccountList: StdAccountListHandler = async (context, input, res) => {
         logger.debug('Starting account list operation')
-        config = await context.reloadConfig()
+        config = await readConfig()
         const attributes = config.attributes ?? []
         const stateWrapper = new StateWrapper(input.state)
 
@@ -111,7 +116,16 @@ export const connector = async () => {
         const valuesMap = new Map<string, string[]>()
 
         try {
-            const search = `${config.search.trim()} OR @accounts(source.id:${sourceId})`
+            let search = ''
+            if (config.useSearch) {
+                if (config.search) {
+                    search = `${config.search.trim()} OR @accounts(source.id:${sourceId})`
+                } else {
+                    logger.warn('No search query provided, using default search')
+                }
+            } else {
+                search = `@accounts(source.id:${sourceId})`
+            }
             const identities = (await isc.search(search, Index.Identities, false)) as IdentityDocument[]
             logger.debug(`Found ${identities.length} identities`)
             const accounts = identities.map(getSourceAccountFromIdentity)
@@ -139,11 +153,7 @@ export const connector = async () => {
                 }
 
                 for (const identity of identities) {
-                    const account = await processIdentity(
-                        identity,
-                        stateWrapper.getCounter(definition.name),
-                        valuesMap.get(definition.name)
-                    )
+                    const account = await processIdentity(identity, stateWrapper, valuesMap)
                     logger.debug(`Sending account with ID: ${account.identity}`)
                     res.send(account)
                 }
@@ -161,7 +171,7 @@ export const connector = async () => {
 
     const stdAccountRead: StdAccountReadHandler = async (context, input, res) => {
         logger.debug(`Reading account for identity: ${input.identity}`)
-        config = await context.reloadConfig()
+        config = await readConfig()
         const identity = await isc.getIdentity(input.identity)
         const account = await processIdentity(identity)
         logger.debug(`Sending account with ID: ${input.identity}`)
@@ -170,20 +180,41 @@ export const connector = async () => {
 
     const stdAccountCreate: StdAccountCreateHandler = async (context, input, res) => {
         logger.debug(`Creating account for identity: ${input.attributes.name}`)
-        config = await context.reloadConfig()
+        config = await readConfig()
         const identity = await isc.getIdentityByName(input.attributes.name)
         const account = await processIdentity(identity)
+        account.attributes.actions = 'generate'
         logger.debug(`Sending account with ID: ${account.identity}`)
         res.send(account)
     }
 
     const stdAccountUpdate: StdAccountUpdateHandler = async (context, input, res) => {
-        logger.debug(`Creating account for identity: ${input.identity}`)
-        config = await context.reloadConfig()
+        logger.debug(`Updating account for identity: ${input.identity}`)
+
+        if (input.changes.find((x) => x.op !== AttributeChangeOp.Set)) {
+            throw new ConnectorError('Only Set operations are supported')
+        }
+
+        config = await readConfig()
         const identity = await isc.getIdentity(input.identity)
         const account = await processIdentity(identity)
         logger.debug(`Sending account with ID: ${account.identity}`)
         res.send(account)
+    }
+
+    const stdEntitlementList: StdEntitlementListHandler = async (context, input, res) => {
+        const action: StdEntitlementListOutput = {
+            identity: 'generate',
+            uuid: 'Generate',
+            type: 'action',
+            attributes: {
+                id: 'generate',
+                name: 'Generate',
+                description: 'Assign this entitlement to create a new account',
+            },
+        }
+
+        res.send(action)
     }
 
     return createConnector()
@@ -192,5 +223,6 @@ export const connector = async () => {
         .stdAccountRead(stdAccountRead)
         .stdAccountCreate(stdAccountCreate)
         .stdAccountUpdate(stdAccountUpdate)
+        .stdEntitlementList(stdEntitlementList)
         .stdAccountDiscoverSchema(stdAccountDiscoverSchema)
 }

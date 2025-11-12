@@ -83,4 +83,14 @@ export class ISCClient {
 
         return response[0] as IdentityDocument
     }
+
+    async getIdentityByName(name: string): Promise<IdentityDocument> {
+        const response = await this.search(`name.exact:"${name}"`, Index.Identities)
+
+        if (response.length === 0) {
+            throw new Error(`Identity not found: ${name}`)
+        }
+
+        return response[0] as IdentityDocument
+    }
 }

@@ -18,5 +18,6 @@ export interface Config {
     clientSecret: string
     attributes?: Attribute[]
     counters?: Map<string, number>
-    search: string
+    search?: string
+    useSearch?: boolean
 }

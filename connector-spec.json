@@ -1,13 +1,22 @@
 {
     "name": "Attribute Generator",
     "description": "Attribute Generator is a connector that generates attributes based on a given expression.",
-    "commands": ["std:test-connection", "std:account:list", "std:account:read", "std:account:discover-schema"],
-    "supportsCustomSchemas": true,
+    "commands": [
+        "std:test-connection",
+        "std:account:list",
+        "std:account:read",
+        "std:account:create",
+        "std:account:update",
+        "std:entitlement:list",
+        "std:account:discover-schema"
+    ],
+    "supportsCustomSchemas": false,
     "supportsStatefulCommands": true,
     "showDebugLoggingOption": true,
     "sourceConfigInitialValues": {
         "search": "*",
         "digits": 1,
+        "counterStart": 1,
         "case": "same",
         "expression": "#set($initial = $firstname.substring(0, 1))$initial$lastname",
         "unique": false,
@@ -24,7 +33,7 @@
                 {
                     "type": "section",
                     "sectionTitle": "Identity Security Cloud connection configuration",
-                    "sectionHelpMessage": "Configuration details for Identity Security Cloud Tenant",
+                    "sectionHelpMessage": "<strong>Configure your Identity Security Cloud tenant connection.</strong><br><br>Use <strong>Identity Security Cloud API URL</strong> for the base URL of your tenant (for example, https://example.api.identity.security.cloud).<br><br>Use <strong>Personal Access Token ID</strong> for the client ID of a Personal Access Token with the required API permissions.<br><br>Use <strong>Personal Access Token secret</strong> for the corresponding client secret. Keep this value secure.",
                     "items": [
                         {
                             "key": "baseurl",
@@ -55,13 +64,21 @@
                 {
                     "type": "section",
                     "sectionTitle": "Attribute Generation Configuration",
-                    "sectionHelpMessage": "Add your attribute generation definitions here",
+                    "sectionHelpMessage": "<strong>Define how account attributes are generated.</strong><br><br>Toggle <strong>Use search for aggregation?</strong> to build attributes using results from an Identity search.<br><br>When search is enabled, enter an <strong>Identity Search Query</strong> to select which identities to use for aggregation.<br><br>Use <strong>Attribute Generation Definitions</strong> to add cards, each describing how a single attribute is built (name, expression, case, type, counters, normalization, and refresh behavior).<br><br>Toggle <strong>Support for incremental counters</strong> to allow stateful commands so counter-based attributes can increment across runs.",
                     "items": [
+                        {
+                            "key": "useSearch",
+                            "label": "Use search for aggregation?",
+                            "type": "toggle",
+                            "required": false
+                        },
                         {
                             "key": "search",
                             "label": "Identity Search Query",
                             "type": "text",
-                            "required": true
+                            "required": true,
+                            "parentKey": "useSearch",
+                            "parentValue": "true"
                         },
                         {
                             "key": "attributes",
@@ -137,6 +154,14 @@
                                             ]
                                         },
                                         {
+                                            "key": "counterStart",
+                                            "label": "Counter start value",
+                                            "type": "number",
+                                            "required": true,
+                                            "parentKey": "type",
+                                            "parentValue": "counter"
+                                        },
+                                        {
                                             "key": "digits",
                                             "label": "Minimum counter digits ($counter)",
                                             "type": "number",
@@ -156,7 +181,7 @@
                                         },
                                         {
                                             "key": "refresh",
-                                            "label": "Refresh on each aggregation?",
+                                            "label": "Refresh on each aggregation? (when used with counter-based or unique attributes, this will reset the counter)",
                                             "type": "toggle"
                                         }
                                     ]
@@ -177,7 +202,7 @@
     "accountSchema": {
         "identityAttribute": "id",
         "displayAttribute": "name",
-        "groupAttribute": "groups",
+        "groupAttribute": "actions",
         "attributes": [
             {
                 "name": "id",
@@ -188,8 +213,56 @@
                 "name": "name",
                 "type": "string",
                 "description": "Account name"
+            },
+            {
+                "name": "actions",
+                "type": "string",
+                "description": "Actions",
+                "entitlement": true,
+                "managed": true,
+                "multiple": false,
+                "schemaObjectType": "action"
             }
         ]
     },
-    "entitlementSchemas": []
+    "entitlementSchemas": [
+        {
+            "type": "action",
+            "identityAttribute": "id",
+            "displayAttribute": "name",
+            "attributes": [
+                {
+                    "name": "id",
+                    "type": "string",
+                    "description": "ID"
+                },
+                {
+                    "name": "name",
+                    "type": "string",
+                    "description": "Name"
+                },
+                {
+                    "name": "description",
+                    "type": "string",
+                    "description": "Description"
+                }
+            ]
+        }
+    ],
+    "accountCreateTemplate": {
+        "fields": [
+            {
+                "key": "name",
+                "label": "Name",
+                "type": "string",
+                "required": true,
+                "initialValue": {
+                    "type": "static",
+                    "attributes": {
+                        "value": "$identity.getName()"
+                    }
+                }
+            }
+        ]
+    }
 }

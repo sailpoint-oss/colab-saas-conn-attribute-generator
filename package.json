@@ -1,6 +1,6 @@
 {
     "name": "attribute-generator",
-    "version": "0.2.0",
+    "version": "0.2.2",
     "main": "dist/index.js",
     "scripts": {
         "clean": "shx rm -rf ./dist",
@@ -14,12 +14,14 @@
     },
     "private": true,
     "dependencies": {
-        "@sailpoint/connector-sdk": "^1.1.22",
-        "sailpoint-api-client": "^1.6.0",
+        "@sailpoint/connector-sdk": "1.1.35",
+        "assert": "^2.1.0",
+        "sailpoint-api-client": "1.7.0",
         "transliteration": "^2.3.5",
         "velocityjs": "^2.1.5"
     },
     "devDependencies": {
+        "@types/assert": "^1.5.11",
         "@vercel/ncc": "^0.34.0",
         "cross-env": "7.0.3",
         "prettier": "^2.3.2",

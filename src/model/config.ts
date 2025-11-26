@@ -7,6 +7,7 @@ export interface Attribute {
     case: 'same' | 'lower' | 'upper' | 'capitalize'
     type: 'normal' | 'unique' | 'counter'
     digits: number
+    counterStart: number
 }
 
 export interface Config {
@@ -18,5 +19,6 @@ export interface Config {
     clientSecret: string
     attributes?: Attribute[]
     counters?: Map<string, number>
-    search: string
+    search?: string
+    useSearch?: boolean
 }

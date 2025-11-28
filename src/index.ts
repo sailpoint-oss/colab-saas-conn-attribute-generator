@@ -38,7 +38,7 @@ export const connector = async () => {
     const sourceId = source.id as string
     assert(sourceId, 'Source ID not found')
     logger.debug(`Found matching source with ID: ${sourceId}`)
-    assert(!(config.useSearch && config.search !== undefined), 'Search query not found')
+    assert(config.useSearch && config.search !== undefined, 'Search query not found')
 
     const stdTestConnection: StdTestConnectionHandler = async (context, input, res) => {
         logger.debug('Testing connection')

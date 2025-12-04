@@ -21,7 +21,13 @@ import { Config } from './model/config'
 import spec from '../connector-spec.json'
 import { IdentityDocument, Index, Account as ISCAccount } from 'sailpoint-api-client'
 import { processIdentity, StateWrapper } from './utils/attributeProcessing'
-import assert from 'assert'
+import { assert } from './utils/assert'
+
+/**
+ * Custom assert function that throws ConnectorError instead of AssertionError
+ * @param condition - The condition to check
+ * @param message - The error message to throw if condition is falsy
+ */
 
 // Connector must be exported as module property named connector
 export const connector = async () => {
@@ -38,14 +44,11 @@ export const connector = async () => {
         (x) => (x as any).connectorAttributes.spConnectorInstanceId === config.spConnectorInstanceId
     )!
     const sourceId = source.id as string
-    assert(sourceId, 'Source ID not found')
+    logger.debug(`Found matching source with ID: ${sourceId}`)
 
     const attributes = config.attributes ?? []
     const uniqueAttributes = attributes.filter((x) => x.type === 'unique' || x.type === 'uuid').map((x) => x.name)
     logger.debug(`Processing ${uniqueAttributes.length} unique attributes`)
-
-    logger.debug(`Found matching source with ID: ${sourceId}`)
-    assert(config.useSearch && config.search !== undefined, 'Search query not found')
 
     const buildValuesMap = (accounts: ISCAccount[]) => {
         logger.debug(`Processing ${uniqueAttributes.length} unique attributes`)
@@ -60,10 +63,27 @@ export const connector = async () => {
         return valuesMap
     }
 
+    const runChecks = () => {
+        logger.debug('Running checks')
+        assert(sourceId, 'Source ID not found')
+        assert(config.useSearch && config.search !== undefined, 'Search query not found')
+        for (const attribute of attributes) {
+            if (attribute.type !== 'uuid') {
+                assert(attribute.expression, 'Expression is required for non-uuid attributes')
+            }
+        }
+    }
+
     const stdTestConnection: StdTestConnectionHandler = async (context, input, res) => {
+        runChecks()
         logger.debug('Testing connection')
         try {
             await isc.getPublicIdentityConfig()
+            for (const attribute of attributes) {
+                if (attribute.type !== 'uuid') {
+                    assert(attribute.expression, 'Expression is required for non-uuid attributes')
+                }
+            }
             logger.debug('Connection test successful')
             res.send({})
         } catch (error) {
@@ -73,6 +93,7 @@ export const connector = async () => {
     }
 
     const stdAccountDiscoverSchema: StdAccountDiscoverSchemaHandler = async (context, input, res) => {
+        runChecks()
         logger.debug('Discovering account schema')
         const schema: AccountSchema = spec.accountSchema
 
@@ -90,6 +111,7 @@ export const connector = async () => {
     }
 
     const stdAccountList: StdAccountListHandler = async (context, input, res) => {
+        runChecks()
         logger.debug('Starting account list operation')
 
         try {
@@ -135,6 +157,7 @@ export const connector = async () => {
     }
 
     const stdAccountRead: StdAccountReadHandler = async (context, input, res) => {
+        runChecks()
         logger.debug(`Reading account for identity: ${input.identity}`)
         const identity = await isc.getIdentity(input.identity)
         const account = await processIdentity(attributes, identity)
@@ -143,6 +166,7 @@ export const connector = async () => {
     }
 
     const stdAccountEnable: StdAccountEnableHandler = async (context, input, res) => {
+        runChecks()
         const accounts = await isc.listAccountsBySource(sourceId)
         logger.info(`Found ${accounts.length} accounts`)
 
@@ -160,6 +184,7 @@ export const connector = async () => {
     }
 
     const stdAccountDisable: StdAccountDisableHandler = async (context, input, res) => {
+        runChecks()
         logger.debug(`Reading account for identity: ${input.identity}`)
         const identity = await isc.getIdentity(input.identity)
         const account = await processIdentity(attributes, identity)
@@ -169,6 +194,7 @@ export const connector = async () => {
     }
 
     const stdAccountCreate: StdAccountCreateHandler = async (context, input, res) => {
+        runChecks()
         logger.debug(`Creating account for identity: ${input.attributes.name}`)
         const identity = await isc.getIdentityByName(input.attributes.name)
         const account = await processIdentity(attributes, identity)
@@ -178,6 +204,7 @@ export const connector = async () => {
     }
 
     const stdAccountUpdate: StdAccountUpdateHandler = async (context, input, res) => {
+        runChecks()
         logger.debug(`Updating account for identity: ${input.identity}`)
 
         const identity = await isc.getIdentity(input.identity)
@@ -201,6 +228,7 @@ export const connector = async () => {
     }
 
     const stdEntitlementList: StdEntitlementListHandler = async (context, input, res) => {
+        runChecks()
         const action: StdEntitlementListOutput = {
             identity: 'generate',
             uuid: 'Generate',

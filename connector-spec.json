@@ -118,7 +118,7 @@
                                             "key": "expression",
                                             "label": "Apache Velocity expression",
                                             "type": "textarea",
-                                            "required": true
+                                            "required": false
                                         },
                                         {
                                             "key": "case",

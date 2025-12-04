@@ -1,6 +1,6 @@
 export interface Attribute {
     name: string
-    expression: string
+    expression?: string
     refresh: boolean
     normalize: boolean
     spaces: boolean

@@ -57,7 +57,7 @@ export const processAttributeDefinition = (definition: Attribute, attributes: Re
         return uuidv4()
     }
 
-    let value = evaluateVelocityTemplate(definition.expression, attributes, definition.maxLength)
+    let value = evaluateVelocityTemplate(definition.expression!, attributes, definition.maxLength)
     if (value) {
         logger.debug(`Template evaluation result - attributeName: ${definition.name}, rawValue: ${value}`)
 
@@ -107,7 +107,7 @@ export const buildAttribute = (
 
     if (definition.type === 'unique') {
         logger.debug(`Processing unique attribute: ${definition.name}`)
-        if (!templateHasVariable(definition.expression, 'counter')) {
+        if (!templateHasVariable(definition.expression!, 'counter')) {
             logger.debug(`Adding counter variable to expression for unique attribute: ${definition.name}`)
             definition.expression = definition.expression + '$counter'
         }

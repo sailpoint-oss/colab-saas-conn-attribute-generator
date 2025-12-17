@@ -1,12 +1,14 @@
 export interface Attribute {
     name: string
-    expression: string
+    expression?: string
     refresh: boolean
     normalize: boolean
     spaces: boolean
     case: 'same' | 'lower' | 'upper' | 'capitalize'
-    type: 'normal' | 'unique' | 'counter'
+    type: 'normal' | 'unique' | 'uuid' | 'counter'
     digits: number
+    counterStart: number
+    maxLength?: number
 }
 
 export interface Config {
@@ -18,5 +20,7 @@ export interface Config {
     clientSecret: string
     attributes?: Attribute[]
     counters?: Map<string, number>
-    search: string
+    search?: string
+    useSearch?: boolean
+    keepManuallyGenerated?: boolean
 }

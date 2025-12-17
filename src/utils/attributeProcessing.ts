@@ -8,14 +8,16 @@ import {
     switchCase,
     templateHasVariable,
 } from './formatting'
-import { logger } from '@sailpoint/connector-sdk'
+import { ConnectorError, logger } from '@sailpoint/connector-sdk'
+import { Account as ISCAccount, IdentityDocument } from 'sailpoint-api-client'
+import { Account } from '../model/account'
+import { v4 as uuidv4 } from 'uuid'
 
 export class StateWrapper {
     state: Map<string, number> = new Map()
 
-    constructor(state: any) {
-        logger.info(`Initializing StateWrapper with state`)
-        logger.info(state)
+    constructor(state?: any) {
+        logger.info(`Initializing StateWrapper with state: ${JSON.stringify(state)}`)
         try {
             this.state = new Map(Object.entries(state))
         } catch (e) {
@@ -33,30 +35,29 @@ export class StateWrapper {
         }
     }
 
-    getCounter(key: string): () => number {
+    getCounter(key: string, start: number = 1): () => number {
         logger.debug(`Getting counter for key: ${key}`)
         return () => {
-            const currentValue = this.state.get(key) ?? 1
+            const currentValue = this.state.get(key) ?? start
             this.state.set(key, currentValue + 1)
             logger.debug(`Persistent counter for key ${key} incremented to: ${currentValue + 1}`)
             return currentValue
         }
     }
 
-    initCounter(key: string) {
+    initCounter(key: string, start: number) {
         if (!this.state.has(key)) {
-            this.state.set(key, 1)
+            this.state.set(key, start)
         }
     }
 }
 
-export const processAttributeDefinition = (
-    definition: Attribute,
-    attributes: RenderContext,
-    counter: () => number,
-    values: string[] = []
-): string | undefined => {
-    let value = evaluateVelocityTemplate(definition.expression, attributes)
+export const processAttributeDefinition = (definition: Attribute, attributes: RenderContext): string | undefined => {
+    if (definition.type === 'uuid') {
+        return uuidv4()
+    }
+
+    let value = evaluateVelocityTemplate(definition.expression!, attributes, definition.maxLength)
     if (value) {
         logger.debug(`Template evaluation result - attributeName: ${definition.name}, rawValue: ${value}`)
 
@@ -81,8 +82,8 @@ export const processAttributeDefinition = (
 export const buildAttribute = (
     definition: Attribute,
     attributes: RenderContext,
-    counter: () => number,
-    values: any[] = []
+    values: any[] = [],
+    counter?: () => number
 ): string | undefined => {
     logger.debug(
         `Building attribute: ${definition.name} with definition: ${JSON.stringify(
@@ -98,28 +99,90 @@ export const buildAttribute = (
             logger.error(`Counter is required for attribute ${definition.name}`)
             return
         }
-    }
-
-    if (definition.type === 'unique') {
-        logger.debug(`Processing unique attribute: ${definition.name}`)
+    } else {
         attributes.counter = ''
     }
 
-    let value = processAttributeDefinition(definition, attributes, counter, values)
+    let value = processAttributeDefinition(definition, attributes)
 
     if (definition.type === 'unique') {
-        if (!templateHasVariable(definition.expression, 'counter')) {
+        logger.debug(`Processing unique attribute: ${definition.name}`)
+        if (!templateHasVariable(definition.expression!, 'counter')) {
             logger.debug(`Adding counter variable to expression for unique attribute: ${definition.name}`)
             definition.expression = definition.expression + '$counter'
         }
         while (value && values?.includes(value)) {
             logger.debug(`Value ${value} already exists, generating new value for unique attribute: ${definition.name}`)
-            attributes.counter = padNumber(counter(), definition.digits)
-            value = processAttributeDefinition(definition, attributes, counter, values)
+            attributes.counter = padNumber(counter!(), definition.digits)
+            value = processAttributeDefinition(definition, attributes)
         }
         values?.push(value)
         logger.debug(`Final unique value generated for attribute ${definition.name}: ${value}`)
+    } else if (definition.type === 'uuid') {
+        while (value && values?.includes(value)) {
+            logger.debug(`Value ${value} already exists, generating new value for uuid attribute: ${definition.name}`)
+            value = processAttributeDefinition(definition, attributes)
+        }
+        values?.push(value)
+        logger.debug(`Final uuid value generated for attribute ${definition.name}: ${value}`)
     }
 
     return value
+}
+
+export const processAttribute = (
+    definition: Attribute,
+    identity: IdentityDocument,
+    accountAttributes: { [key: string]: any },
+    values?: string[],
+    counter?: () => number
+): void => {
+    if (definition.refresh || accountAttributes[definition.name] === undefined) {
+        logger.debug(`Building attribute ${definition.name} for identity ${identity.id}`)
+        if (identity.attributes) {
+            const value = buildAttribute(definition, identity.attributes, values, counter)
+            accountAttributes![definition.name] = value
+            identity.attributes[definition.name] = value
+        } else {
+            logger.error(`Identity ${identity.id} has no attributes`)
+            throw new ConnectorError(`Identity ${identity.id} has no attributes`)
+        }
+    }
+}
+
+export const processIdentity = (
+    attributeDefinitions: Attribute[] | undefined,
+    identity: IdentityDocument,
+    sourceAccount?: ISCAccount,
+    valuesMap?: Map<string, string[]>,
+    stateWrapper?: StateWrapper
+): Account => {
+    const attributes = attributeDefinitions ?? []
+    let accountAttributes = sourceAccount?.attributes ?? { id: identity.id, name: identity.name }
+
+    for (const definition of attributes) {
+        let counter
+        switch (definition.type) {
+            case 'counter':
+                if (stateWrapper) {
+                    counter = stateWrapper?.getCounter(definition.name, definition.counterStart)
+                } else {
+                    logger.warn(`State wrapper is missing, skipping counter attribute ${definition.name}`)
+                    continue
+                }
+                break
+            case 'unique':
+                counter = StateWrapper.getCounter()
+                break
+            default:
+                break
+        }
+        const values = valuesMap?.get(definition.name)
+
+        processAttribute(definition, identity, accountAttributes, values, counter)
+    }
+
+    const account = new Account(accountAttributes)
+
+    return account
 }

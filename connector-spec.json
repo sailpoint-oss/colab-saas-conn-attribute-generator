@@ -1,30 +1,42 @@
 {
     "name": "Attribute Generator",
     "description": "Attribute Generator is a connector that generates attributes based on a given expression.",
-    "commands": ["std:test-connection", "std:account:list", "std:account:read", "std:account:discover-schema"],
-    "supportsCustomSchemas": true,
+    "commands": [
+        "std:test-connection",
+        "std:account:list",
+        "std:account:read",
+        "std:account:create",
+        "std:account:update",
+        "std:account:disable",
+        "std:account:enable",
+        "std:entitlement:list",
+        "std:account:discover-schema"
+    ],
+    "supportsCustomSchemas": false,
     "supportsStatefulCommands": true,
     "showDebugLoggingOption": true,
     "sourceConfigInitialValues": {
         "search": "*",
         "digits": 1,
+        "counterStart": 1,
         "case": "same",
         "expression": "#set($initial = $firstname.substring(0, 1))$initial$lastname",
         "unique": false,
         "refresh": false,
         "force": false,
         "type": "normal",
-        "spConnEnableStatefulCommands": true
+        "spConnEnableStatefulCommands": true,
+        "keepManuallyGenerated": true
     },
     "sourceConfig": [
         {
             "type": "menu",
-            "label": "Connection Details",
+            "label": "Connection Configuration",
             "items": [
                 {
                     "type": "section",
                     "sectionTitle": "Identity Security Cloud connection configuration",
-                    "sectionHelpMessage": "Configuration details for Identity Security Cloud Tenant",
+                    "sectionHelpMessage": "<strong>Configure your Identity Security Cloud tenant connection.</strong><br><br>Use <strong>Identity Security Cloud API URL</strong> for the base URL of your tenant (for example, https://example.api.identity.security.cloud).<br><br>Use <strong>Personal Access Token ID</strong> for the client ID of a Personal Access Token with the required API permissions.<br><br>Use <strong>Personal Access Token secret</strong> for the corresponding client secret. Keep this value secure.",
                     "items": [
                         {
                             "key": "baseurl",
@@ -50,18 +62,34 @@
         },
         {
             "type": "menu",
-            "label": "Attributes",
+            "label": "Attribute Configuration",
             "items": [
                 {
                     "type": "section",
-                    "sectionTitle": "Attribute Generation Configuration",
-                    "sectionHelpMessage": "Add your attribute generation definitions here",
+                    "sectionTitle": "Attribute Generation Settings",
+                    "sectionHelpMessage": "<strong>Define how account attributes are generated.</strong><br><br>Use <strong>Use search for aggregation?</strong> to optionally build attributes using results from an Identity search instead of only this source's accounts.<br><br>When search is enabled, enter an <strong>Identity Search Query</strong>. If <strong>Keep manually generated accounts outside the search query</strong> is enabled, accounts that were manually generated from this source are always included in aggregation even if they do not match the search query.<br><br>Use <strong>Attribute Generation Definitions</strong> to configure how each attribute is built (name, Apache Velocity expression, case, type, counter start, minimum counter digits, maximum length, normalization, spacing, and refresh behavior). <strong>Apache Velocity expressions</strong> have access to an enhanced context including <strong>Math</strong> (JavaScript Math object for mathematical operations), <strong>Date</strong> (JavaScript Date object for date manipulation), and <strong>Datefns</strong> (date-fns library for advanced date formatting and manipulation). <strong>Maximum length</strong> truncates generated values to the specified length (for unique and counter attributes, the counter is preserved at the end). <strong>Refresh on each aggregation?</strong> is only available for normal attributes and causes the attribute to be recalculated every aggregation run, even if it already has a value on the account. Counter-based and unique attributes always preserve their state across runs. <strong>UUID attributes</strong> generate universally unique identifiers automatically.<br><br>The connector supports disabling and enabling accounts. When an account is enabled, all attributes (including unique attributes) are force refreshed and recalculated, ensuring that unique attribute values are regenerated based on the current state of all accounts.<br><br>Toggle <strong>Support for incremental counters</strong> to enable stateful commands required for counter-based attributes to increment across connector runs.",
                     "items": [
+                        {
+                            "key": "useSearch",
+                            "label": "Use search for aggregation?",
+                            "type": "toggle",
+                            "required": false
+                        },
+                        {
+                            "key": "keepManuallyGenerated",
+                            "label": "Keep manually generated accounts outside the search query",
+                            "type": "toggle",
+                            "required": false,
+                            "parentKey": "useSearch",
+                            "parentValue": "true"
+                        },
                         {
                             "key": "search",
                             "label": "Identity Search Query",
                             "type": "text",
-                            "required": true
+                            "required": true,
+                            "parentKey": "useSearch",
+                            "parentValue": "true"
                         },
                         {
                             "key": "attributes",
@@ -90,7 +118,7 @@
                                             "key": "expression",
                                             "label": "Apache Velocity expression",
                                             "type": "textarea",
-                                            "required": true
+                                            "required": false
                                         },
                                         {
                                             "key": "case",
@@ -131,10 +159,22 @@
                                                     "value": "unique"
                                                 },
                                                 {
+                                                    "label": "UUID",
+                                                    "value": "uuid"
+                                                },
+                                                {
                                                     "label": "Counter-based",
                                                     "value": "counter"
                                                 }
                                             ]
+                                        },
+                                        {
+                                            "key": "counterStart",
+                                            "label": "Counter start value",
+                                            "type": "number",
+                                            "required": true,
+                                            "parentKey": "type",
+                                            "parentValue": "counter"
                                         },
                                         {
                                             "key": "digits",
@@ -143,6 +183,13 @@
                                             "required": true,
                                             "parentKey": "type",
                                             "parentValue": "counter"
+                                        },
+                                        {
+                                            "key": "maxLength",
+                                            "label": "Maximum length",
+                                            "type": "number",
+                                            "required": false,
+                                            "min": "1"
                                         },
                                         {
                                             "key": "normalize",
@@ -157,7 +204,9 @@
                                         {
                                             "key": "refresh",
                                             "label": "Refresh on each aggregation?",
-                                            "type": "toggle"
+                                            "type": "toggle",
+                                            "parentKey": "type",
+                                            "parentValue": "normal"
                                         }
                                     ]
                                 }
@@ -177,7 +226,7 @@
     "accountSchema": {
         "identityAttribute": "id",
         "displayAttribute": "name",
-        "groupAttribute": "groups",
+        "groupAttribute": "actions",
         "attributes": [
             {
                 "name": "id",
@@ -188,8 +237,56 @@
                 "name": "name",
                 "type": "string",
                 "description": "Account name"
+            },
+            {
+                "name": "actions",
+                "type": "string",
+                "description": "Actions",
+                "entitlement": true,
+                "managed": true,
+                "multiple": true,
+                "schemaObjectType": "action"
             }
         ]
     },
-    "entitlementSchemas": []
+    "entitlementSchemas": [
+        {
+            "type": "action",
+            "identityAttribute": "id",
+            "displayAttribute": "name",
+            "attributes": [
+                {
+                    "name": "id",
+                    "type": "string",
+                    "description": "ID"
+                },
+                {
+                    "name": "name",
+                    "type": "string",
+                    "description": "Name"
+                },
+                {
+                    "name": "description",
+                    "type": "string",
+                    "description": "Description"
+                }
+            ]
+        }
+    ],
+    "accountCreateTemplate": {
+        "fields": [
+            {
+                "key": "name",
+                "label": "Name",
+                "type": "string",
+                "required": true,
+                "initialValue": {
+                    "type": "static",
+                    "attributes": {
+                        "value": "$identity.getName()"
+                    }
+                }
+            }
+        ]
+    }
 }

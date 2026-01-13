@@ -59,6 +59,18 @@ export class ISCClient {
         return response.data
     }
 
+    async getSourceAccount(nativeIdentity: string, sourceId: string): Promise<Account | undefined> {
+        const api = new AccountsApi(this.config)
+        const filters = `sourceId eq "${sourceId}" and nativeIdentity eq "${nativeIdentity}"`
+        const requestParameters: AccountsApiListAccountsRequest = {
+            filters,
+        }
+
+        const response = await api.listAccounts(requestParameters)
+
+        return response.data[0]
+    }
+
     async search(query: string, index: Index, includeNested: boolean = true): Promise<SearchDocument[]> {
         const api = new SearchApi(this.config)
         const search: Search = {

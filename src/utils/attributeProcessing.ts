@@ -22,6 +22,7 @@ export class StateWrapper {
             this.state = new Map(Object.entries(state))
         } catch (e) {
             logger.error('Failed to convert state object to Map. Initializing with empty Map')
+            this.state = new Map()
         }
     }
 

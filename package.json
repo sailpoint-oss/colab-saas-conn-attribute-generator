@@ -1,6 +1,6 @@
 {
     "name": "attribute-generator",
-    "version": "0.2.5",
+    "version": "0.2.6",
     "main": "dist/index.js",
     "scripts": {
         "clean": "shx rm -rf ./dist",
@@ -12,7 +12,7 @@
         "test": "jest --coverage --passWithNoTests",
         "prepack-zip": "npm ci && npm run build",
         "pack-zip": "spcx package"
-    }, 
+    },
     "private": true,
     "dependencies": {
         "@sailpoint/connector-sdk": "1.1.35",

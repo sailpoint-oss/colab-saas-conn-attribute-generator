@@ -160,7 +160,8 @@ export const connector = async () => {
         runChecks()
         logger.debug(`Reading account for identity: ${input.identity}`)
         const identity = await isc.getIdentity(input.identity)
-        const account = await processIdentity(attributes, identity)
+        const sourceAccount = await isc.getSourceAccount(input.identity, sourceId)
+        const account = await processIdentity(attributes, identity, sourceAccount)
         logger.debug(`Sending account with ID: ${input.identity}`)
         res.send(account)
     }
@@ -187,7 +188,8 @@ export const connector = async () => {
         runChecks()
         logger.debug(`Reading account for identity: ${input.identity}`)
         const identity = await isc.getIdentity(input.identity)
-        const account = await processIdentity(attributes, identity)
+        const sourceAccount = await isc.getSourceAccount(input.identity, sourceId)
+        const account = await processIdentity(attributes, identity, sourceAccount)
         account.disabled = true
         logger.debug(`Sending account with ID: ${input.identity}`)
         res.send(account)

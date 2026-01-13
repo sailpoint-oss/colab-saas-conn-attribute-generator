@@ -94,7 +94,7 @@
                         {
                             "key": "attributes",
                             "label": "Attribute Generation Definitions",
-                            "titleKey": "query",
+                            "titleKey": "expression",
                             "subtitleKey": "name",
                             "dragNDropEnabled": true,
                             "deleteButton": true,
